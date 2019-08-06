@@ -28,7 +28,7 @@ def instances():
 	"""Commands for instances"""
 
 @instances.command('list')
-@click.option('--project', default=None, help="Only instance for project based on tag")
+@click.option('--project', default=None, help="Filter instances based on 'project' tag")
 def list_instances(project):
 	"""List EC2 instances"""
 	
@@ -47,7 +47,7 @@ def list_instances(project):
 	return
 
 @instances.command('start')
-@click.option('--project', default=None, help="Only instance for project based on tag")
+@click.option('--project', default=None, help="Filter instances based on 'project' tag")
 def start_instances(project):
 	"""Start EC2 instances"""
 
@@ -59,7 +59,7 @@ def start_instances(project):
 			print("Skipping {0} instance in {1} state".format(i.id, i.state['Name']))
 
 @instances.command('stop')
-@click.option('--project', default=None, help="Only instance for project based on tag")
+@click.option('--project', default=None, help="Filter instances based on 'project' tag")
 def stop_instances(project):
 	"""Stop EC2 instances"""
 
@@ -76,7 +76,7 @@ def volumes():
 	"""Commands for volumes"""
 
 @volumes.command('list')
-@click.option('--project', default=None, help='Only instance for project based on tag')
+@click.option('--project', default=None, help="Filter instances based on 'project' tag")
 def list_volumes(project):
 	"""List volumes for EC2 instaces"""
 
