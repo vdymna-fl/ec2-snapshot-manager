@@ -5,7 +5,8 @@ TAG_PROJECT = 'project' # make this a constant
 STOPPED_STATE = 'stopped'
 RUNNING_STATE = 'running'
 
-session = boto3.Session(profile_name='default')
+#session = boto3.Session(profile_name='default')
+session = boto3.Session()
 ec2 = session.resource('ec2')
 
 def get_ec2_instances(project):
@@ -43,7 +44,7 @@ def list_instances(project):
 			i.public_dns_name or '<no public dns name>',
 			tags.get(TAG_PROJECT, '<no project>') 
 		]))
-
+	#print some default message if no data to show
 	return
 
 @instances.command('start')
@@ -71,6 +72,24 @@ def stop_instances(project):
 			i.stop()
 		else:
 			print("Skipping {0} instance in {1} state".format(i.id, i.state['Name']))
+
+	return
+
+@instances.command('snapshot')
+@click.option('--project', default=None, help="Filter instances based on 'project' tag")
+def create_snapshots(project):
+	"""Create snapshots of all volumes"""
+
+	for i in get_ec2_instances(project):
+		print("Stopping {0} instance...".format(i.id))
+		i.stop()
+		i.wait_until_stopped()
+		for v in i.volumes.all():
+			print("Creating snapshot of {0} volume...".format(v.id))
+			v.create_snapshot(Description="Created by EC2 Snapshot Manager")
+		print("Starting {0} instance...".format(i.id))
+		i.start()
+		i.wait_until_running()
 
 	return
 
