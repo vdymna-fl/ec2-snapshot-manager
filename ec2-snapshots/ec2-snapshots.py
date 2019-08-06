@@ -4,6 +4,8 @@ import click
 TAG_PROJECT = 'project' # make this a constant
 STOPPED_STATE = 'stopped'
 RUNNING_STATE = 'running'
+COMPLETED_STATE = 'completed'
+PENDING_STATE = 'pending'
 
 #session = boto3.Session(profile_name='default')
 session = boto3.Session()
@@ -85,13 +87,20 @@ def create_snapshots(project):
 		i.stop()
 		i.wait_until_stopped()
 		for v in i.volumes.all():
-			print("Creating snapshot of {0} volume...".format(v.id))
-			v.create_snapshot(Description="Created by EC2 Snapshot Manager")
+			if has_pending_snapshot(v):
+				print("Skipping {0} volume, snapshot already in progress".format(v.id))
+			else:
+				print("Creating snapshot of {0} volume...".format(v.id))
+				v.create_snapshot(Description="Created by EC2 Snapshot Manager")
 		print("Starting {0} instance...".format(i.id))
 		i.start()
 		i.wait_until_running()
 
 	return
+
+def has_pending_snapshot(volume):
+	snapshots = list(volume.snapshots.all())
+	return snapshots and snapshots[0].state == PENDING_STATE
 
 @cli.group('volumes')
 def volumes():
@@ -119,7 +128,8 @@ def snapshots():
 
 @snapshots.command('list')
 @click.option('--project', default=None, help="Filter instances based on 'project' tag")
-def list_snapshots(project):
+@click.option('--all', 'list_all', default=False, is_flag = True, help="List all snapshots for each volume, default is False")
+def list_snapshots(project, list_all):
 	"""List snapshots for EC2 instances"""
 
 	for i in get_ec2_instances(project):
@@ -133,6 +143,9 @@ def list_snapshots(project):
 					s.progress,
 					s.start_time.strftime("%x at %X %z")
 				]))
+
+				if s.state == COMPLETED_STATE and not list_all:
+					break
 
 	return
       
