@@ -57,6 +57,8 @@ def start_instances(project):
 			i.start()
 		else:
 			print("Skipping {0} instance in {1} state".format(i.id, i.state['Name']))
+	
+	return
 
 @instances.command('stop')
 @click.option('--project', default=None, help="Filter instances based on 'project' tag")
@@ -70,6 +72,7 @@ def stop_instances(project):
 		else:
 			print("Skipping {0} instance in {1} state".format(i.id, i.state['Name']))
 
+	return
 
 @cli.group('volumes')
 def volumes():
@@ -89,6 +92,29 @@ def list_volumes(project):
 				str(v.size) + ' GiB',
 				v.encrypted and "Encrypted" or "Not Encrypted"
 			]))
+	return
+
+@cli.group('snapshots')
+def snapshots():
+	"""Commands for snapshots"""
+
+@snapshots.command('list')
+@click.option('--project', default=None, help="Filter instances based on 'project' tag")
+def list_snapshots(project):
+	"""List snapshots for EC2 instances"""
+
+	for i in get_ec2_instances(project):
+		for v in i.volumes.all():
+			for s in v.snapshots.all():
+				print(', '.join([
+					s.id,
+					v.id,
+					i.id,
+					s.state,
+					s.progress,
+					s.start_time.strftime("%x at %X %z")
+				]))
+
 	return
       
 if __name__ == '__main__':
