@@ -1,34 +1,21 @@
 import boto3
 import click
 
-PROJECT_TAG = 'project'
-RUNNING_STATE = 'running'
-STOPPED_STATE = 'stopped'
-COMPLETED_STATE = 'completed'
-PENDING_STATE = 'pending'
+import constants
 
-#session = boto3.Session(profile_name='default')
+
 session = boto3.Session()
 ec2 = session.resource('ec2')
-
-def get_ec2_instances(project):
-	instances = []
-
-	if project:
-		filters = [{ 'Name': 'tag:' + PROJECT_TAG, 'Values': [ project ]}]
-		instances = ec2.instances.filter(Filters=filters)
-	else:
-		instances = ec2.instances.all()
-
-	return instances
 
 @click.group()
 def cli():
 	"""CLI to manage EC2 snapshots"""
 
+
 @cli.group('instances')
 def instances():
 	"""Commands for instances"""
+
 
 @instances.command('list')
 @click.option('--project', default=None, help="Filter instances based on 'project' tag")
@@ -44,10 +31,11 @@ def list_instances(project):
 			i.placement['AvailabilityZone'], 
 			i.state['Name'], 
 			i.public_dns_name or '<no public dns name>',
-			tags.get(PROJECT_TAG, '<no project>') 
+			tags.get(constants.PROJECT_TAG, '<no project>') 
 		]))
 	#print some default message if no data to show
 	return
+
 
 @instances.command('start')
 @click.option('--project', default=None, help="Filter instances based on 'project' tag")
@@ -55,7 +43,7 @@ def start_instances(project):
 	"""Start EC2 instances"""
 
 	for i in get_ec2_instances(project):
-		if i.state['Name'] == STOPPED_STATE:
+		if i.state['Name'] == constants.STOPPED_STATE:
 			print("Starting {0} instance...".format(i.id))
 			i.start()
 		else:
@@ -63,19 +51,21 @@ def start_instances(project):
 	
 	return
 
+
 @instances.command('stop')
 @click.option('--project', default=None, help="Filter instances based on 'project' tag")
 def stop_instances(project):
 	"""Stop EC2 instances"""
 
 	for i in get_ec2_instances(project):
-		if i.state['Name'] == RUNNING_STATE:
+		if i.state['Name'] == constants.RUNNING_STATE:
 			print("Stopping {0} instance...".format(i.id))
 			i.stop()
 		else:
 			print("Skipping {0} instance in {1} state".format(i.id, i.state['Name']))
 
 	return
+
 
 @instances.command('snapshot')
 @click.option('--project', default=None, help="Filter instances based on 'project' tag")
@@ -98,13 +88,11 @@ def create_snapshots(project):
 
 	return
 
-def has_pending_snapshot(volume):
-	snapshots = list(volume.snapshots.all())
-	return snapshots and snapshots[0].state == PENDING_STATE
 
 @cli.group('volumes')
 def volumes():
-	"""Commands for volumes"""
+	"""Commands for EC2 volumes"""
+
 
 @volumes.command('list')
 @click.option('--project', default=None, help="Filter instances based on 'project' tag")
@@ -122,9 +110,11 @@ def list_volumes(project):
 			]))
 	return
 
+
 @cli.group('snapshots')
 def snapshots():
-	"""Commands for snapshots"""
+	"""Commands for EC2 volumes snapshots"""
+
 
 @snapshots.command('list')
 @click.option('--project', default=None, help="Filter instances based on 'project' tag")
@@ -144,10 +134,28 @@ def list_snapshots(project, list_all):
 					s.start_time.strftime("%x at %X %z")
 				]))
 
-				if s.state == COMPLETED_STATE and not list_all:
+				if s.state == constants.COMPLETED_STATE and not list_all:
 					break
 
 	return
-      
+
+
+def get_ec2_instances(project):
+	instances = []
+
+	if project:
+		filters = [{ 'Name': 'tag:' + constants.PROJECT_TAG, 'Values': [ project ]}]
+		instances = ec2.instances.filter(Filters=filters)
+	else:
+		instances = ec2.instances.all()
+
+	return instances
+
+
+def has_pending_snapshot(volume):
+	snapshots = list(volume.snapshots.all())
+	return snapshots and snapshots[0].state == constants.PENDING_STATE
+   
+	
 if __name__ == '__main__':
 	cli()

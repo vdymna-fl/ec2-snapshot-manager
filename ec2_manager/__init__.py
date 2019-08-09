@@ -1,0 +1,1 @@
+"""CLI to manage EC2 snapshots."""
