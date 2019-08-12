@@ -8,7 +8,7 @@ Small python CLI to manage AWS EC2 instance snapshots using boto3.
 
 *commands* - instances, volumes or snapshosts  
 *subcommand* - list, start, stop, reboot or snapshot (depends on command `--help` for more info)  
-*profile* - optional, specify other non-default profile
+*profile* - optional, specify other non-default profile  
 *project* - optional  
 
 ## Create distribution package
