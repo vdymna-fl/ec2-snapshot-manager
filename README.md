@@ -12,7 +12,7 @@ The project uses [pipenv](https://docs.pipenv.org/en/latest/) to manage a virtua
 *--region* - optional, specify AWS region name  
 *commands* - instances, volumes or snapshosts  
 *subcommand* - list, start, stop, reboot or snapshot (depends on the command `--help` for more info)  
-*--project* - optional, filter list of instances by project tag
+*--project* - optional, filter list of instances by project tag  
 *--instance* - optional, specific instance id
 
 ## Create distribution package
