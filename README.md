@@ -16,6 +16,6 @@ The project uses [pipenv](https://docs.pipenv.org/en/latest/) to manage a virtua
 *--instance* - optional, specific instance id
 
 ## Distribution package and local install
-`pipenv run python setup.py bdist_wheel`
-`pip3 install dist\EC2_Snapshot_Manager-0.1-py3-none-any.whl`
-`ec2-manager --help`
+`pipenv run python setup.py bdist_wheel`  
+`pip3 install dist\EC2_Snapshot_Manager-0.1-py3-none-any.whl`  
+`ec2-manager --help`  
