@@ -9,14 +9,19 @@ from instance import InstanceManager
 instance_manager = None
 
 @click.group()
-@click.option('--profile', default=None, help='Set AWS profile')
-def cli(profile):
+@click.option('--profile', default=None, help='Specify AWS profile name.')
+@click.option('--region', default=None, help="Specify AWS region name.")
+def cli(profile, region):
 	"""CLI to manage EC2 instances, volumes and snapshots."""
 	global instance_manager
+
+	session_cfg = {}
 	if profile:
-		session = boto3.Session(profile_name=profile)
-	else:
-		session = boto3.Session()
+		session_cfg['profile_name'] = profile
+	if region:
+		session_cfg['region_name'] = region
+
+	session = boto3.Session(**session_cfg)
 	
 	instance_manager = InstanceManager(session)
 
@@ -116,7 +121,7 @@ def create_snapshots(project, instance):
 
 @cli.group('volumes')
 def volumes():
-	"""Commands for EC2 volumes"""
+	"""Commands for EC2 volumes."""
 
 
 @volumes.command('list')
@@ -139,7 +144,7 @@ def list_volumes(project, instance):
 
 @cli.group('snapshots')
 def snapshots():
-	"""Commands for EC2 volumes snapshots"""
+	"""Commands for EC2 volumes snapshots."""
 
 
 @snapshots.command('list')
