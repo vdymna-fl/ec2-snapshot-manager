@@ -1,6 +1,6 @@
 """Classes to interact with EC2 resources."""
 
-import constants
+from ec2_manager import constants
 
 
 class InstanceManager:

@@ -2,8 +2,8 @@
 
 import boto3
 import click
-import constants
-from instance import InstanceManager
+from ec2_manager import constants
+from ec2_manager.instance import InstanceManager
 
 
 instance_manager = None
