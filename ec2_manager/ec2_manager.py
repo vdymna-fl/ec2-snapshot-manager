@@ -187,4 +187,4 @@ def try_stop_instance(instance):
 
 
 if __name__ == '__main__':
-	cli(None)
+	cli(None, None)
