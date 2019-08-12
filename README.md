@@ -18,7 +18,7 @@ The project uses [pipenv](https://docs.pipenv.org/en/latest/) to manage a virtua
 ## Distribution package and local install
 Create python distribution package/wheel  
 `pipenv run python setup.py bdist_wheel`  
-Run the install using pip and the generated wheel  
+Run install using pip and generated wheel  
 `pip3 install dist\EC2_Snapshot_Manager-0.1-py3-none-any.whl`  
 Run the CLI  
 `ec2-manager --help`  
