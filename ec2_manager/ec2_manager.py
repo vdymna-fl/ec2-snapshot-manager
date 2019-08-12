@@ -1,66 +1,87 @@
 import boto3
 import click
-
 import constants
+from instance import InstanceManager
 
 
-session = boto3.Session()
-ec2 = session.resource('ec2')
+instance_manager = None
 
 @click.group()
-def cli():
-	"""CLI to manage EC2 snapshots"""
+@click.option('--profile', default=None, help='Set AWS profile')
+def cli(profile):
+	"""CLI to manage EC2 snapshots."""
+	global instance_manager
+	if profile:
+		session = boto3.Session(profile_name=profile)
+	else:
+		session = boto3.Session()
+	
+	instance_manager = InstanceManager(session)
 
 
 @cli.group('instances')
 def instances():
-	"""Commands for instances"""
+	"""Commands for instances."""
 
 
 @instances.command('list')
 @click.option('--project', default=None, help="Filter instances based on 'project' tag")
 def list_instances(project):
-	"""List EC2 instances"""
-	
-	for i in get_ec2_instances(project):
+	"""List EC2 instances."""
+
+	for i in instance_manager.get_ec2_instances(project):
 		tags = { t['Key']: t['Value'] for t in i.tags or []}
 
-		print(', '.join([ 
-			i.id, 
-			i.instance_type, 
-			i.placement['AvailabilityZone'], 
-			i.state['Name'], 
+		print(', '.join([
+			i.id,
+			i.instance_type,
+			i.placement['AvailabilityZone'],
+			i.state['Name'],
 			i.public_dns_name or '<no public dns name>',
-			tags.get(constants.PROJECT_TAG, '<no project>') 
+			tags.get(constants.PROJECT_TAG, '<no project>')
 		]))
-	#print some default message if no data to show
+	
 	return
 
 
 @instances.command('start')
 @click.option('--project', default=None, help="Filter instances based on 'project' tag")
 def start_instances(project):
-	"""Start EC2 instances"""
+	"""Start EC2 instances."""
 
-	for i in get_ec2_instances(project):
-		if i.state['Name'] == constants.STOPPED_STATE:
+	for i in instance_manager.get_ec2_instances(project):
+		if instance_manager.is_instance_stopped(i):
 			print("Starting {0} instance...".format(i.id))
 			i.start()
 		else:
 			print("Skipping {0} instance in {1} state".format(i.id, i.state['Name']))
-	
+
 	return
 
 
 @instances.command('stop')
 @click.option('--project', default=None, help="Filter instances based on 'project' tag")
 def stop_instances(project):
-	"""Stop EC2 instances"""
+	"""Stop EC2 instances."""
 
-	for i in get_ec2_instances(project):
-		if i.state['Name'] == constants.RUNNING_STATE:
+	for i in instance_manager.get_ec2_instances(project):
+		if instance_manager.is_instance_running(i):
 			print("Stopping {0} instance...".format(i.id))
 			i.stop()
+		else:
+			print("Skipping {0} instance in {1} state".format(i.id, i.state['Name']))
+
+	return
+
+@instances.command('reboot')
+@click.option('--project', default=None, help="Filter instances based on 'project' tag")
+def reboot_instances(project):
+	"""Reboot EC2 instances."""
+
+	for i in instance_manager.get_ec2_instances(project):
+		if instance_manager.is_instance_running(i):
+			print("Rebooting {0} instance...".format(i.id))
+			i.reboot()
 		else:
 			print("Skipping {0} instance in {1} state".format(i.id, i.state['Name']))
 
@@ -70,14 +91,14 @@ def stop_instances(project):
 @instances.command('snapshot')
 @click.option('--project', default=None, help="Filter instances based on 'project' tag")
 def create_snapshots(project):
-	"""Create snapshots of all volumes"""
+	"""Create snapshots of all volumes."""
 
-	for i in get_ec2_instances(project):
+	for i in instance_manager.get_ec2_instances(project):
 		print("Stopping {0} instance...".format(i.id))
 		i.stop()
 		i.wait_until_stopped()
 		for v in i.volumes.all():
-			if has_pending_snapshot(v):
+			if instance_manager.volume_has_pending_snapshot(v):
 				print("Skipping {0} volume, snapshot already in progress".format(v.id))
 			else:
 				print("Creating snapshot of {0} volume...".format(v.id))
@@ -99,7 +120,7 @@ def volumes():
 def list_volumes(project):
 	"""List volumes for EC2 instaces"""
 
-	for i in get_ec2_instances(project):
+	for i in instance_manager.get_ec2_instances(project):
 		for v in i.volumes.all():
 			print(', '.join([
 				v.id,
@@ -122,7 +143,7 @@ def snapshots():
 def list_snapshots(project, list_all):
 	"""List snapshots for EC2 instances"""
 
-	for i in get_ec2_instances(project):
+	for i in instance_manager.get_ec2_instances(project):
 		for v in i.volumes.all():
 			for s in v.snapshots.all():
 				print(', '.join([
@@ -140,22 +161,5 @@ def list_snapshots(project, list_all):
 	return
 
 
-def get_ec2_instances(project):
-	instances = []
-
-	if project:
-		filters = [{ 'Name': 'tag:' + constants.PROJECT_TAG, 'Values': [ project ]}]
-		instances = ec2.instances.filter(Filters=filters)
-	else:
-		instances = ec2.instances.all()
-
-	return instances
-
-
-def has_pending_snapshot(volume):
-	snapshots = list(volume.snapshots.all())
-	return snapshots and snapshots[0].state == constants.PENDING_STATE
-   
-	
 if __name__ == '__main__':
 	cli()
