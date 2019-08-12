@@ -12,12 +12,14 @@ class InstanceManager:
         self.ec2 = self.session.resource('ec2')
 
 
-    def get_ec2_instances(self, project):
+    def get_ec2_instances(self, project_tag, instance_id=None):
         """Get list of EC2 instances and optionally filter by project name"""
         instances = []
 
-        if project:
-            filters = [{'Name': 'tag:' + constants.PROJECT_TAG, 'Values': [project]}]
+        if instance_id:
+            instances = self.ec2.instances.filter(InstanceIds=[instance_id])
+        elif project_tag:
+            filters = [{'Name': 'tag:' + constants.PROJECT_TAG, 'Values': [project_tag]}]
             instances = self.ec2.instances.filter(Filters=filters)
         else:
             instances = self.ec2.instances.all()
