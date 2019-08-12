@@ -65,11 +65,7 @@ def stop_instances(project):
 	"""Stop EC2 instances."""
 
 	for i in instance_manager.get_ec2_instances(project):
-		if instance_manager.is_instance_running(i):
-			print("Stopping {0} instance...".format(i.id))
-			i.stop()
-		else:
-			print("Skipping {0} instance in {1} state".format(i.id, i.state['Name']))
+		try_stop_instance(i)
 
 	return
 
@@ -94,18 +90,20 @@ def create_snapshots(project):
 	"""Create snapshots of all volumes."""
 
 	for i in instance_manager.get_ec2_instances(project):
-		print("Stopping {0} instance...".format(i.id))
-		i.stop()
-		i.wait_until_stopped()
-		for v in i.volumes.all():
-			if instance_manager.volume_has_pending_snapshot(v):
-				print("Skipping {0} volume, snapshot already in progress".format(v.id))
-			else:
-				print("Creating snapshot of {0} volume...".format(v.id))
-				v.create_snapshot(Description="Created by EC2 Snapshot Manager")
-		print("Starting {0} instance...".format(i.id))
-		i.start()
-		i.wait_until_running()
+		was_running = instance_manager.is_instance_running(i)
+		
+		if try_stop_instance(i):
+			i.wait_until_stopped()
+			for v in i.volumes.all():
+				if instance_manager.volume_has_pending_snapshot(v):
+					print("Skipping {0} volume, snapshot already in progress".format(v.id))
+				else:
+					print("Creating snapshot of {0} volume...".format(v.id))
+					v.create_snapshot(Description="Created by EC2 Snapshot Manager")
+			if was_running:
+				print("Starting {0} instance...".format(i.id))
+				i.start()
+				i.wait_until_running()
 
 	return
 
@@ -161,5 +159,19 @@ def list_snapshots(project, list_all):
 	return
 
 
+def try_stop_instance(instance):
+	"""Try to stop an EC2 instance."""
+	if instance_manager.is_instance_running(instance):
+		print("Stopping {0} instance...".format(instance.id))
+		instance.stop()
+		return True
+	elif instance_manager.is_instance_stopped(instance):
+		print("{0} instance is already in stopped state...".format(instance.id))
+		return True
+	else:
+		print("Skipping {0} instance in {1} state".format(instance.id, instance.state['Name']))
+		return False
+
+
 if __name__ == '__main__':
-	cli()
+	cli(None)
