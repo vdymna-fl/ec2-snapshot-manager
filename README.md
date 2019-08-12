@@ -2,8 +2,7 @@
 Small python CLI to manage AWS EC2 instance snapshots using boto3.
 
 ## Running
-The project uses [pipenv](https://docs.pipenv.org/en/latest/) to manage a virtualenv and packages.  
-`pip3 install pipenv`
+The project uses [pipenv](https://docs.pipenv.org/en/latest/) to manage a virtualenv and packages - `pip3 install pipenv`
 
 `pipenv run python ec2_manager\ec2_manager.py --profile <AWS PROFILE> <command> <subcommand> --project <PROJECT TAG NAME>`
 
